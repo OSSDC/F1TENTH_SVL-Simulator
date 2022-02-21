@@ -234,11 +234,18 @@ class PurePursuitPlanner:
 env = Env()
 
 # Create the sim instance and connect to the SVL Simulator
-sim = lgsvl.Simulator(env.str("LGSVL__SIMULATOR_HOST", lgsvl.wise.SimulatorSettings.simulator_host), env.int("LGSVL__SIMULATOR_PORT", lgsvl.wise.SimulatorSettings.simulator_port))
+sim = lgsvl.Simulator(env.str("LGSVL__SIMULATOR_HOST", "localhost"), env.int("LGSVL__SIMULATOR_PORT", lgsvl.wise.SimulatorSettings.simulator_port))
+
+# Create the Red Bull Racetrack
+map_uuid = "781b04c8-43b4-431e-af55-1ae2b2efc873" #Red Bull
 
 # Load the Racetrack and create the scene/environment
-sim.load(scene = "781b04c8-43b4-431e-af55-1ae2b2efc873", seed = 650387)         # Create the Red Bull Racetrack
-sim.reset()
+sim.load(scene = map_uuid, seed = 650387)         
+if sim.current_scene == map_uuid:
+    sim.reset()
+else:
+    sim.load(map_uuid)
+
 spawns = sim.get_spawn()
 
 # Load the EGO vehicle and spawn it on the track
@@ -248,7 +255,6 @@ ego = sim.add_agent(name = "3bb4c2eb-82d3-4ee3-8ebb-2bdbcf6e88ea", agent_type = 
 
 # Load an NPC and spawn it on the track
 ego2 = sim.add_agent("3bb4c2eb-82d3-4ee3-8ebb-2bdbcf6e88ea", agent_type =lgsvl.AgentType.EGO, state = None)
-
 
 # Set a new daytime for the simulator, Time of day can be set from 0 ... 24
 print("Current time:", sim.time_of_day)

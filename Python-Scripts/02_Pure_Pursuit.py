@@ -233,27 +233,48 @@ class PurePursuitPlanner:
 # Create the environment variable
 env = Env()
 
+# set simhost and adehost in C:\Windows\System32\drivers\etc\hosts
+SIMULATOR_HOST = env.str("LGSVL__SIMULATOR_HOST", 'simhost1')
+# SIMULATOR_BRIDGE = env.str("LGSVL__SIMULATOR_BRIDGE", 'adehost1')
+SIMULATOR_BRIDGE = None
+SIMULATOR_BRIDGE_PORT = env.str("LGSVL__SIMULATOR_BRIDGE_PORT", '9091')
+
+if SIMULATOR_HOST is None:
+    print("Set env LGSVL__SIMULATOR_BRIDGE")
+    exit()
+if SIMULATOR_BRIDGE is None:
+    print("Set env LGSVL__SIMULATOR_HOST")
+
 # Create the sim instance and connect to the SVL Simulator
-sim = lgsvl.Simulator(env.str("LGSVL__SIMULATOR_HOST", lgsvl.wise.SimulatorSettings.simulator_host), env.int("LGSVL__SIMULATOR_PORT", lgsvl.wise.SimulatorSettings.simulator_port))
+sim = lgsvl.Simulator(SIMULATOR_HOST, env.int("LGSVL__SIMULATOR_PORT", lgsvl.wise.SimulatorSettings.simulator_port))
+map_uuid = "781b04c8-43b4-431e-af55-1ae2b2efc873" #Red Bull
+# map_uuid = "62765742-57bf-4ccd-85e5-db8295d34ead" #IMS
+# map_uuid = "a3be7bf6-b5a6-4e48-833d-a1f1dd6d7a1e" #LVMS
 
 # Load the Racetrack and create the scene/environment
-sim.load(scene = "781b04c8-43b4-431e-af55-1ae2b2efc873", seed = 650387)         # Create the Red Bull Racetrack
-sim.reset()
+if sim.current_scene == map_uuid:
+    sim.reset()
+else:
+    sim.load(map_uuid)
+
 spawns = sim.get_spawn()
 
 # Load the EGO vehicle and spawn it on the track
 state = lgsvl.AgentState()
 state.transform = spawns[0]
-ego = sim.add_agent(name = "3bb4c2eb-82d3-4ee3-8ebb-2bdbcf6e88ea", agent_type = lgsvl.AgentType.EGO, state = None)     # Vehicle Configut WITHOUT sensors
-#ego = sim.add_agent(name = "47e2ebcd-2b67-4d5b-934a-0621c35d8823", agent_type = lgsvl.AgentType.EGO, state = None)      # Vehicle Configut WITH sensors
+
+ego = sim.add_agent(name = "3bb4c2eb-82d3-4ee3-8ebb-2bdbcf6e88ea", agent_type = lgsvl.AgentType.EGO, state = None)     # Vehicle F1Tenth Config WITHOUT sensors
+# ego = sim.add_agent(name = "3c0417f5-98d4-41ad-ad6d-10d2b0130f77", agent_type = lgsvl.AgentType.EGO, state = None)      # Vehicle F1Tenth Config WITH sensors and bridge, run and enable ADE lgsvl_bridge host 
+# ego = sim.add_agent(name = "f2923f50-69ce-4392-b21e-d65dee1a9ae3", agent_type = lgsvl.AgentType.EGO, state = None)      # Vehicle Dallara AV21 IAC 2021 with 2D/3D grundtruth sensors
+
+if SIMULATOR_BRIDGE is not None:
+    ego.connect_bridge(SIMULATOR_BRIDGE, int(SIMULATOR_BRIDGE_PORT)) #connect to LGSVL bridge
+    print("Waiting for connection to ROS2 bridge ...")
+    while not ego.bridge_connected:
+        time.sleep(1)
 
 # Load the Sensors of the vehicle
 sensors = ego.get_sensors()
-
-
-# Load an NPC and spawn it on the track
-# npc = sim.add_agent("3bb4c2eb-82d3-4ee3-8ebb-2bdbcf6e88ea", agent_type =lgsvl.AgentType.EGO, state = None)
-
 
 # Set a new daytime for the simulator, Time of day can be set from 0 ... 24
 print("Current Day time in Simulation:", sim.time_of_day)
